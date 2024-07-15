@@ -4,7 +4,6 @@ from pyzbar.pyzbar import decode
 import sqlite3
 import cv2
 import numpy as np
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, VideoFrame
 
 # SQLite setup
 conn = sqlite3.connect('scanprods.db')
@@ -29,11 +28,18 @@ def fetch_product_details(product_id):
     else:
         return None
 
-class VideoTransformer(VideoTransformerBase):
-    def transform(self, frame: VideoFrame) -> VideoFrame:
-        img = frame.to_ndarray(format="bgr24")
+# Function to capture video from the camera and scan for QR codes
+def scan_qr_code_from_camera():
+    cap = cv2.VideoCapture(0)
+    qr_data = None
 
-        decoded_objects = decode(img)
+    stframe = st.empty()
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        decoded_objects = decode(frame)
         for obj in decoded_objects:
             qr_data = obj.data.decode('utf-8')
             pts = obj.polygon
@@ -44,9 +50,15 @@ class VideoTransformer(VideoTransformerBase):
                 hull = pts
             n = len(hull)
             for j in range(0, n):
-                cv2.line(img, hull[j], hull[(j + 1) % n], (0, 255, 0), 3)
+                cv2.line(frame, hull[j], hull[(j + 1) % n], (0, 255, 0), 3)
         
-        return VideoFrame.from_ndarray(img, format="bgr24")
+        stframe.image(frame, channels="BGR")
+        
+        if qr_data:
+            break
+    
+    cap.release()
+    return qr_data
 
 def main():
     st.title('Shoot & Scan QR Code')
@@ -91,12 +103,10 @@ def main():
 
     with tab2:
         st.subheader('Or Scan with Camera')
-        webrtc_ctx = webrtc_streamer(key="example", video_transformer_factory=VideoTransformer)
-
-        if webrtc_ctx.video_transformer:
-            qr_data = webrtc_ctx.video_transformer.qr_data
+        if st.button('Start Camera Scan'):
+            qr_data = scan_qr_code_from_camera()
             if qr_data:
-                st.write(f"QR Code Data: {qr_data}")
+                st.write(f"QR Code Data: ")
                 if qr_data.startswith('PRODAPP:'):
                     try:
                         product_id = int(qr_data.split('\n')[0].split(': ')[1])
