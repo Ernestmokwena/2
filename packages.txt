@@ -1,5 +1,5 @@
 libzbar0
-pillow10.4.0
-pandas2.2.2
-numpy2.0.0
-Flask3.0.3
+pillow
+pandas
+numpy
+Flask
