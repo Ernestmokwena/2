@@ -1,5 +1,1 @@
 libzbar0
-pillow
-pandas
-numpy
-Flask
