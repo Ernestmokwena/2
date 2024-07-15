@@ -1,1 +1,8 @@
 libzbar0
+Pillow
+opencv-python
+numpy
+pyzbar
+sqlite3
+streamlit
+libzbar0
